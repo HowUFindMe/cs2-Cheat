@@ -1,1 +1,280 @@
-print("HIBARBIES")
+-- BeanBotWare Rivals
+local repo = 'https://raw.githubusercontent.com/violin-suzutsuki/LinoriaLib/main/'
+
+local Library = loadstring(game:HttpGet(repo .. 'Library.lua'))()
+local ThemeManager = loadstring(game:HttpGet(repo .. 'addons/ThemeManager.lua'))()
+local SaveManager = loadstring(game:HttpGet(repo .. 'addons/SaveManager.lua'))()
+
+local Window = Library:CreateWindow({
+    Title = 'BeanBotWare Rivals',
+    Center = true,
+    AutoShow = true,
+    TabPadding = 8,
+    MenuFadeTime = 0.2
+})
+
+local Tabs = {
+    Main = Window:AddTab('Main'),
+    Player = Window:AddTab('Player'),
+    ['UI Settings'] = Window:AddTab('UI Settings')
+}
+
+local LeftGroupBox = Tabs.Main:AddLeftGroupbox('Silent Aim')
+
+-- Variable to store the state of silent aim
+local silentAimActive = false
+
+-- Toggle button for Silent Aim
+LeftGroupBox:AddToggle('SilentAimToggle', {
+    Text = 'Enable Silent Aim',
+    Default = false, -- Default value (true / false)
+    Tooltip = 'This not a aimbot', -- Information shown when you hover over the toggle
+
+    Callback = function(Value)
+        silentAimActive = Value
+        print("Silent Aim Active:", silentAimActive)
+    end
+})
+
+-- Services
+local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
+local Workspace = game:GetService("Workspace")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Camera = Workspace.CurrentCamera
+local LocalPlayer = Players.LocalPlayer
+local RunService = game:GetService('RunService')
+
+-- Function to get the nearest target's head
+local function getNearestHead()
+    local closestPlayer = nil
+    local shortestDistance = math.huge
+
+    for _, player in pairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+            local distance = (player.Character.HumanoidRootPart.Position - LocalPlayer.Character.HumanoidRootPart.Position).Magnitude
+            if distance < shortestDistance then
+                shortestDistance = distance
+                closestPlayer = player
+            end
+        end
+    end
+
+    if closestPlayer and closestPlayer.Character and closestPlayer.Character:FindFirstChild("Head") then
+        return closestPlayer.Character.Head
+    end
+
+    return nil
+end
+
+-- Silent aim functionality with headshots, triggered by mouse click
+UserInputService.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 and silentAimActive then
+        local targetHead = getNearestHead()
+        if targetHead then
+            local aimPosition = targetHead.Position
+            Camera.CFrame = CFrame.new(Camera.CFrame.Position, aimPosition)
+            ReplicatedStorage.Remotes.Attack:FireServer(targetHead)
+        end
+    end
+end)
+
+-- Player Tab: Speed Section
+local SpeedGroupBox = Tabs.Player:AddLeftGroupbox('Speed')
+
+-- Global WalkSpeed value
+_G.WS = 60 
+_G.SpeedEnabled = false -- Variable to track whether speed is enabled
+
+-- Function to set the WalkSpeed
+local function setWalkSpeed()
+    if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+        local Humanoid = LocalPlayer.Character.Humanoid
+
+        -- Ensure that the WalkSpeed is always set to the desired value if speed is enabled
+        Humanoid:GetPropertyChangedSignal("WalkSpeed"):Connect(function()
+            if _G.SpeedEnabled then
+                Humanoid.WalkSpeed = _G.WS
+            end
+        end)
+
+        -- Set the initial WalkSpeed if speed is enabled
+        if _G.SpeedEnabled then
+            Humanoid.WalkSpeed = _G.WS
+        end
+    end
+end
+
+-- Connect to CharacterAdded to reapply WalkSpeed when character respawns
+LocalPlayer.CharacterAdded:Connect(function()
+    -- Delay the application slightly to ensure the character is fully loaded
+    wait(0.1)
+    setWalkSpeed()
+end)
+
+-- Initial call to set WalkSpeed on the current character
+if LocalPlayer.Character then
+    setWalkSpeed()
+end
+
+-- Toggle button to turn speed on/off
+SpeedGroupBox:AddToggle('SpeedToggle', {
+    Text = 'Enable Speed',
+    Default = false, -- Default value (true / false)
+    Tooltip = 'Flash?', -- Information shown when you hover over the toggle
+
+    Callback = function(Value)
+        _G.SpeedEnabled = Value
+        if _G.SpeedEnabled then
+            setWalkSpeed()
+        else
+            -- Reset to default WalkSpeed when disabled
+            if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+                LocalPlayer.Character.Humanoid.WalkSpeed = 16 -- Default Roblox WalkSpeed
+            end
+        end
+    end
+})
+
+-- Slider to adjust the speed
+SpeedGroupBox:AddSlider('SpeedSlider', {
+    Text = 'WalkSpeed',
+    Default = _G.WS,
+    Min = 16, -- Minimum WalkSpeed
+    Max = 200, -- Maximum WalkSpeed
+    Rounding = 0,
+    Compact = false,
+
+    Callback = function(Value)
+        _G.WS = Value
+        if _G.SpeedEnabled then
+            setWalkSpeed()
+        end
+    end
+})
+
+-- Noclip Section in Player Tab
+local NoclipGroupBox = Tabs.Player:AddRightGroupbox('Noclip')
+
+local NoclipEnabled = false -- Whether noclip is currently enabled
+
+-- Function to handle noclip logic
+local function noclip()
+    if NoclipEnabled and LocalPlayer.Character then
+        for _, part in pairs(LocalPlayer.Character:GetDescendants()) do
+            if part:IsA("BasePart") and part.CanCollide then
+                part.CanCollide = false
+            end
+        end
+    end
+end
+
+-- Toggle button to turn noclip on/off
+NoclipGroupBox:AddToggle('NoclipToggle', {
+    Text = 'Enable Noclip',
+    Default = false, -- Default value (true / false)
+    Tooltip = 'Disapear like my dad', -- Information shown when you hover over the toggle
+
+    Callback = function(Value)
+        NoclipEnabled = Value
+        print("Noclip is now", NoclipEnabled and "Enabled" or "Disabled")
+    end
+})
+
+-- Function to set up noclip for the character
+local function setupNoclip(character)
+    RunService.Stepped:Connect(noclip)
+end
+
+-- Connect the setup function to character respawns
+LocalPlayer.CharacterAdded:Connect(setupNoclip)
+
+-- Setup noclip for the current character if it exists
+if LocalPlayer.Character then
+    setupNoclip(LocalPlayer.Character)
+end
+
+-- Auto-Jump Section in Player Tab
+local AutoJumpGroupBox = Tabs.Player:AddRightGroupbox('Auto-Jump')
+
+local AutoJumpEnabled = false -- Variable to track auto-jump state
+local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+local Humanoid = Character:WaitForChild("Humanoid")
+
+-- Function to handle automatic jumping
+local function autoJump()
+    if AutoJumpEnabled and Humanoid and Humanoid.FloorMaterial ~= Enum.Material.Air then
+        Humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+    end
+end
+
+-- Toggle button to enable/disable auto-jump
+AutoJumpGroupBox:AddToggle('AutoJumpToggle', {
+    Text = 'Enable Auto-Jump',
+    Default = false, -- Default value (true / false)
+    Tooltip = 'I Jump On Dick', -- Information shown when you hover over the toggle
+
+    Callback = function(Value)
+        AutoJumpEnabled = Value
+        print("Auto-Jump is now", AutoJumpEnabled and "Enabled" or "Disabled")
+    end
+})
+
+-- Connect the autoJump function to RenderStepped
+RunService.RenderStepped:Connect(autoJump)
+
+-- Coming Soon Section
+local RightGroupBox = Tabs.Main:AddRightGroupbox('Coming Soon...')
+RightGroupBox:AddLabel('New features will be added soon!')
+
+-- UI Settings
+local MenuGroup = Tabs['UI Settings']:AddLeftGroupbox('Menu')
+
+MenuGroup:AddButton('Unload', function() Library:Unload() end)
+MenuGroup:AddLabel('Menu bind'):AddKeyPicker('MenuKeybind', { Default = 'End', NoUI = true, Text = 'Menu keybind' })
+
+Library.ToggleKeybind = Options.MenuKeybind -- Allows you to have a custom keybind for the menu
+
+-- Dynamic Watermark
+Library:SetWatermarkVisibility(true)
+local FrameTimer = tick()
+local FrameCounter = 0
+local FPS = 60
+
+local WatermarkConnection = game:GetService('RunService').RenderStepped:Connect(function()
+    FrameCounter += 1
+
+    if (tick() - FrameTimer) >= 1 then
+        FPS = FrameCounter
+        FrameTimer = tick()
+        FrameCounter = 0
+    end
+
+    Library:SetWatermark(('BeanBotWare Rivals | %s fps | %s ms'):format(
+        math.floor(FPS),
+        math.floor(game:GetService('Stats').Network.ServerStatsItem['Data Ping']:GetValue())
+    ))
+end)
+
+Library.KeybindFrame.Visible = true
+
+Library:OnUnload(function()
+    WatermarkConnection:Disconnect()
+    print('Unloaded!')
+    Library.Unloaded = true
+end)
+
+-- Theme and Save Manager Setup
+ThemeManager:SetLibrary(Library)
+SaveManager:SetLibrary(Library)
+
+SaveManager:IgnoreThemeSettings()
+SaveManager:SetIgnoreIndexes({ 'MenuKeybind' })
+
+ThemeManager:SetFolder('MyScriptHub')
+SaveManager:SetFolder('MyScriptHub/specific-game')
+
+SaveManager:BuildConfigSection(Tabs['UI Settings'])
+ThemeManager:ApplyToTab(Tabs['UI Settings'])
+
+SaveManager:LoadAutoloadConfig()
