@@ -16,6 +16,7 @@ local Window = Library:CreateWindow({
 local Tabs = {
     Main = Window:AddTab('Main'),
     Player = Window:AddTab('Player'),
+    ESP = Window:AddTab('ESP'), -- New ESP Tab
     ['UI Settings'] = Window:AddTab('UI Settings')
 }
 
@@ -28,7 +29,7 @@ local silentAimActive = false
 LeftGroupBox:AddToggle('SilentAimToggle', {
     Text = 'Enable Silent Aim',
     Default = false, -- Default value (true / false)
-    Tooltip = 'This not a aimbot', -- Information shown when you hover over the toggle
+    Tooltip = 'THIS ISNT AIMBOT', -- Information shown when you hover over the toggle
 
     Callback = function(Value)
         silentAimActive = Value
@@ -121,7 +122,7 @@ end
 SpeedGroupBox:AddToggle('SpeedToggle', {
     Text = 'Enable Speed',
     Default = false, -- Default value (true / false)
-    Tooltip = 'Flash?', -- Information shown when you hover over the toggle
+    Tooltip = 'FLASH', -- Information shown when you hover over the toggle
 
     Callback = function(Value)
         _G.SpeedEnabled = Value
@@ -173,7 +174,7 @@ end
 NoclipGroupBox:AddToggle('NoclipToggle', {
     Text = 'Enable Noclip',
     Default = false, -- Default value (true / false)
-    Tooltip = 'Disapear like my dad', -- Information shown when you hover over the toggle
+    Tooltip = 'Just like my dad', -- Information shown when you hover over the toggle
 
     Callback = function(Value)
         NoclipEnabled = Value
@@ -194,6 +195,74 @@ if LocalPlayer.Character then
     setupNoclip(LocalPlayer.Character)
 end
 
+-- ESP Section in ESP Tab
+local ESPGroupBox = Tabs.ESP:AddLeftGroupbox('ESP')
+
+local ESPEnabled = false -- Variable to track the ESP state
+
+-- Function to create the BillboardGui
+local function createBillboardGui()
+    local gui = Instance.new("BillboardGui")
+    gui.Name = ""
+    gui.AlwaysOnTop = true
+    gui.LightInfluence = 0
+    gui.Size = UDim2.new(1.75, 0, 1.75, 0)
+
+    local frame = Instance.new("Frame", gui)
+    frame.BackgroundColor3 = Color3.fromRGB(170, 0, 0)
+    frame.Size = UDim2.new(1, 0, 1, 0)
+    frame.BorderSizePixel = 4
+    frame.BorderColor3 = Color3.fromRGB(0, 0, 0)
+
+    return gui
+end
+
+-- Function to handle the ESP logic
+local function handleESP()
+    while ESPEnabled do
+        for _, player in pairs(Players:GetPlayers()) do
+            if player.Name ~= LocalPlayer.Name and player.Character and player.Character:FindFirstChild("Head") then
+                local existingGui = player.Character.Head:FindFirstChild("BillboardGui")
+                if not existingGui then
+                    createBillboardGui().Parent = player.Character.Head
+                end
+            end
+        end
+        wait(5) -- Adjust the interval as needed
+    end
+
+    -- If ESP is disabled, remove the BillboardGui
+    if not ESPEnabled then
+        for _, player in pairs(Players:GetPlayers()) do
+            if player.Character and player.Character:FindFirstChild("Head") then
+                                local existingGui = player.Character.Head:FindFirstChild("BillboardGui")
+                if existingGui then
+                    existingGui:Destroy()
+                end
+            end
+        end
+    end
+end
+
+-- Toggle button to enable/disable ESP
+ESPGroupBox:AddToggle('ESPToggle', {
+    Text = 'Enable ESP',
+    Default = false, -- Default value (true / false)
+    Tooltip = 'How can u see me', -- Information shown when you hover over the toggle
+
+    Callback = function(Value)
+        ESPEnabled = Value
+        if ESPEnabled then
+            -- Start the ESP function when enabled
+            handleESP()
+        else
+            -- Clean up any existing ESP UI elements when disabled
+            handleESP()
+        end
+        print("ESP is now", ESPEnabled and "Enabled" or "Disabled")
+    end
+})
+
 -- Auto-Jump Section in Player Tab
 local AutoJumpGroupBox = Tabs.Player:AddRightGroupbox('Auto-Jump')
 
@@ -212,7 +281,7 @@ end
 AutoJumpGroupBox:AddToggle('AutoJumpToggle', {
     Text = 'Enable Auto-Jump',
     Default = false, -- Default value (true / false)
-    Tooltip = 'I Jump On Dick', -- Information shown when you hover over the toggle
+    Tooltip = 'IM GAY OMG IM COMMING', -- Information shown when you hover over the toggle
 
     Callback = function(Value)
         AutoJumpEnabled = Value
@@ -278,3 +347,4 @@ SaveManager:BuildConfigSection(Tabs['UI Settings'])
 ThemeManager:ApplyToTab(Tabs['UI Settings'])
 
 SaveManager:LoadAutoloadConfig()
+
