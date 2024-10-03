@@ -247,21 +247,6 @@ local function setDeviceControls()
     print("Switched from", YourDevice, "to", WantedDevice)
 end
 
--- Dropdown for selecting YourDevice
-ExtraGroupBox:AddDropdown('YourDeviceDropdown', {
-    Values = deviceOptions,
-    Default = 1, -- Default to MouseKeyboard
-    Multi = false, -- Single selection
-    Text = 'Your Device',
-    Tooltip = 'Choose the device you are currently using (e.g., Touch for mobile players)',
-    
-    Callback = function(Value)
-        YourDevice = Value
-        print("YourDevice selected:", YourDevice)
-        setDeviceControls() -- Apply the device change after selecting
-    end
-})
-
 -- Dropdown for selecting WantedDevice
 ExtraGroupBox:AddDropdown('WantedDeviceDropdown', {
     Values = deviceOptions,
