@@ -16,16 +16,17 @@ local Window = Library:CreateWindow({
 local Tabs = {
     Main = Window:AddTab('Main'),
     Player = Window:AddTab('Player'),
-    ESP = Window:AddTab('ESP'), -- New ESP Tab
+    Extra = Window:AddTab('Extra'),
+    ESP = Window:AddTab('ESP'),
     ['UI Settings'] = Window:AddTab('UI Settings')
 }
 
 local LeftGroupBox = Tabs.Main:AddLeftGroupbox('Silent Aim')
 
--- Variable to store the state of silent aim
+
 local silentAimActive = false
 
--- Toggle button for Silent Aim
+
 LeftGroupBox:AddToggle('SilentAimToggle', {
     Text = 'Enable Silent Aim',
     Default = false, -- Default value (true / false)
@@ -194,6 +195,87 @@ LocalPlayer.CharacterAdded:Connect(setupNoclip)
 if LocalPlayer.Character then
     setupNoclip(LocalPlayer.Character)
 end
+
+local ExtraGroupBox = Tabs.Extra:AddLeftGroupbox('No Flash And Smoke')
+
+-- Function to remove FlashbangEffect and SmokeClouds
+local function removeEffects()
+    local playerScripts = game:GetService("Players").LocalPlayer.PlayerScripts
+    if playerScripts.Assets.Misc:FindFirstChild("FlashbangEffect") then
+        playerScripts.Assets.Misc.FlashbangEffect:Destroy()
+    end
+    if playerScripts.Assets.Misc:FindFirstChild("SmokeClouds") then
+        playerScripts.Assets.Misc.SmokeClouds:Destroy()
+    end
+end
+
+-- Toggle button for No Flash & No Smoke
+ExtraGroupBox:AddToggle('', {
+    Text = 'Enable',
+    Default = false, -- Default value (true / false)
+    Tooltip = 'No FlashBang and Smoke Effect',
+
+    Callback = function(Value)
+        if Value then
+            removeEffects()
+        end
+        print("Ur Gay")
+    end
+})
+
+-- Extra Tab: Device Settings Section
+local ExtraGroupBox = Tabs.Extra:AddRightGroupbox('Device Changer')
+
+-- Available device options
+local deviceOptions = {
+    "MouseKeyboard",
+    "Touch",
+    "Gamepad"
+}
+
+-- Variables for selected devices
+local YourDevice = "MouseKeyboard" -- Default selection for YourDevice
+local WantedDevice = "Gamepad" -- Default selection for WantedDevice
+
+-- Function to set the controls for devices
+local function setDeviceControls()
+    -- Fire the remote for YourDevice
+    game:GetService("ReplicatedStorage"):WaitForChild("Remotes"):WaitForChild("Replication"):WaitForChild("Fighter"):WaitForChild("SetControls"):FireServer(YourDevice)
+    task.wait(0.3) -- Wait before switching
+    -- Fire the remote for WantedDevice
+    game:GetService("ReplicatedStorage"):WaitForChild("Remotes"):WaitForChild("Replication"):WaitForChild("Fighter"):WaitForChild("SetControls"):FireServer(WantedDevice)
+    print("Switched from", YourDevice, "to", WantedDevice)
+end
+
+-- Dropdown for selecting YourDevice
+ExtraGroupBox:AddDropdown('YourDeviceDropdown', {
+    Values = deviceOptions,
+    Default = 1, -- Default to MouseKeyboard
+    Multi = false, -- Single selection
+    Text = 'Your Device',
+    Tooltip = 'Choose the device you are currently using (e.g., Touch for mobile players)',
+    
+    Callback = function(Value)
+        YourDevice = Value
+        print("YourDevice selected:", YourDevice)
+        setDeviceControls() -- Apply the device change after selecting
+    end
+})
+
+-- Dropdown for selecting WantedDevice
+ExtraGroupBox:AddDropdown('WantedDeviceDropdown', {
+    Values = deviceOptions,
+    Default = 3, -- Default to Gamepad
+    Multi = false, -- Single selection
+    Text = 'Wanted Device',
+    Tooltip = 'Choose the device you want to switch to (e.g., Gamepad)',
+    
+    Callback = function(Value)
+        WantedDevice = Value
+        print("WantedDevice selected:", WantedDevice)
+        setDeviceControls() -- Apply the device change after selecting
+    end
+})
 
 -- ESP Section in ESP Tab
 local ESPGroupBox = Tabs.ESP:AddLeftGroupbox('ESP')
